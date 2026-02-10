@@ -1,0 +1,34 @@
+{
+  "leads": [
+    {
+      "businessName": "Betr-Inc.com",
+      "name": "Brian",
+      "email": "brian@betr-inc.com",
+      "phone": "904-868-1468",
+      "notes": "Demo Call Complete, Talking to accountant, ($1,000 website build, $150/m retainer)",
+      "status": "Hot",
+      "id": "18e98361-bfec-408b-bba5-384cdd40e9ff",
+      "createdAt": "2026-02-10T20:14:54.542Z",
+      "called": false
+    }
+  ],
+  "expenses": [],
+  "users": [
+    {
+      "id": "ece8377d-6059-4371-93ac-affcb62c0b8d",
+      "name": "Admin",
+      "email": "anthony@amplyfyconsulting.com",
+      "password": "Flyfit_97$",
+      "role": "Admin",
+      "createdAt": "2026-02-10T20:35:16.098Z"
+    },
+    {
+      "id": "7e173ad0-fd4f-441f-96b3-9b47b414133c",
+      "name": "John Curtis",
+      "email": "Johncurtis@amplyfyconsulting.com",
+      "password": "Johncurtis2026$",
+      "role": "Admin",
+      "createdAt": "2026-02-10T20:39:42.519Z"
+    }
+  ]
+}
