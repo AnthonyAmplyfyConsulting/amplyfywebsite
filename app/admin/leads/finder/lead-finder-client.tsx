@@ -1,10 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { findLeads, FindLeadsResult } from '@/lib/google-places';
 import { bulkApproveLeads } from '@/lib/actions';
 import { Lead } from '@/lib/db';
 import { Search, Loader2, CheckCircle2, XCircle, Globe, Phone, MapPin, Star } from 'lucide-react';
+
+interface FindLeadsResult {
+    leads: Partial<Lead>[];
+    totalFound: number;
+    filtered: number;
+}
 
 export default function LeadFinderClient() {
     const [query, setQuery] = useState('');
@@ -22,7 +27,17 @@ export default function LeadFinderClient() {
         setSelectedLeads(new Set());
 
         try {
-            const data = await findLeads({ query });
+            const response = await fetch('/api/find-leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to find leads');
+            }
+
+            const data = await response.json();
             setResults(data);
         } catch (error) {
             console.error('Error finding leads:', error);
