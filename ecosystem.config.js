@@ -3,9 +3,8 @@ module.exports = {
         {
             name: 'amplyfy-web',
             script: '.next/standalone/server.js',
-            args: 'start',
-            instances: 'max',
-            exec_mode: 'cluster',
+            instances: 1,
+            exec_mode: 'fork',
             autorestart: true,
             watch: false,
             max_memory_restart: '1G',
