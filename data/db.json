@@ -245,6 +245,14 @@
       "password": "Johncurtis2026$",
       "role": "Admin",
       "createdAt": "2026-02-10T20:39:42.519Z"
+    },
+    {
+      "id": "a726cb70-8cb8-4c86-8ab0-6c24d6426295",
+      "name": "Bajram G",
+      "email": "Bajramg@amplyfyconsulting.com",
+      "password": "Bajramg12!",
+      "role": "Admin",
+      "createdAt": "2026-02-11T13:05:00.000Z"
     }
   ]
 }
