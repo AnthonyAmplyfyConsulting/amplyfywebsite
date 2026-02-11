@@ -1,13 +1,14 @@
-import { readDB } from '@/lib/db';
+import dbConnect from '@/lib/mongodb';
+import { Lead } from '@/lib/models';
 import LeadsTable from './leads-table';
 
 export default async function LeadsPage() {
-    const db = await readDB();
+    await dbConnect();
 
     // Sort leads by created date desc
-    const sortedLeads = [...db.leads].sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const sortedLeads = await Lead.find({}, '-_id -__v').sort({ createdAt: -1 }).lean();
 
-    return <LeadsTable leads={sortedLeads} />;
+    // Force cast to any to avoid strict type checking on filtered properties vs interface, 
+    // or rely on the shape matching. Mongoose lean() returns POJO.
+    return <LeadsTable leads={JSON.parse(JSON.stringify(sortedLeads))} />;
 }

@@ -1,7 +1,5 @@
-import fs from 'fs/promises';
-import path from 'path';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+// This file now only serves as a Type definition file and is kept for compatibility.
+// The actual data storage has moved to MongoDB (lib/models.ts and lib/mongodb.ts).
 
 export type LeadStatus = 'Hot' | 'Warm' | 'Cold';
 
@@ -44,46 +42,4 @@ export interface DBData {
     leads: Lead[];
     expenses: Expense[];
     users: User[];
-}
-
-// In-memory cache removed to ensure consistency across requests/instances
-// let cache: DBData | null = null;
-
-async function ensureDB() {
-    const dir = path.dirname(DB_PATH);
-    try {
-        await fs.access(dir);
-    } catch {
-        await fs.mkdir(dir, { recursive: true });
-    }
-
-    try {
-        await fs.access(DB_PATH);
-    } catch {
-        // Create initial DB
-        await fs.writeFile(DB_PATH, JSON.stringify({ leads: [], expenses: [], users: [] }, null, 2));
-    }
-}
-
-
-export async function readDB(): Promise<DBData> {
-    await ensureDB();
-    // if (cache) return cache;
-    const data = await fs.readFile(DB_PATH, 'utf-8');
-    return JSON.parse(data) as DBData;
-}
-
-export async function writeDB(data: DBData) {
-    await ensureDB();
-    // cache = data;
-    await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
-}
-
-// Helper to add dummy data if empty (optional)
-export async function seedDB() {
-    const db = await readDB();
-    if (db.leads.length === 0) {
-        // db.leads.push({ ... });
-        // await writeDB(db);
-    }
 }

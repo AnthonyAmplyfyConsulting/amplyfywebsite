@@ -2,10 +2,12 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { readDB, writeDB, Lead, LeadStatus, Expense, ExpenseFrequency, User, UserRole } from './db';
+import dbConnect from './mongodb';
+import { User, Lead, Expense } from './models';
 import { revalidatePath } from 'next/cache';
 import fs from 'fs/promises';
 import path from 'path';
+import { UserRole, LeadStatus, ExpenseFrequency } from './db';
 
 // --- Auth ---
 
@@ -16,22 +18,19 @@ export async function login(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const db = await readDB();
+    await dbConnect();
 
     // --- Seed Logic: If no users, create default admin ---
-    if (!db.users || db.users.length === 0) {
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
         if (email === ADMIN_USER_EMAIL && password === ADMIN_PASS_DEFAULT) {
-            const newAdmin: User = {
+            const newAdmin = await User.create({
                 id: crypto.randomUUID(),
                 name: 'Admin',
                 email: ADMIN_USER_EMAIL,
                 password: ADMIN_PASS_DEFAULT,
                 role: 'Admin',
-                createdAt: new Date().toISOString(),
-            };
-            if (!db.users) db.users = [];
-            db.users.push(newAdmin);
-            await writeDB(db);
+            });
 
             // Log them in immediately
             await setSession(newAdmin.id);
@@ -41,21 +40,20 @@ export async function login(formData: FormData) {
 
     // --- Ensure Bajram G exists (Migration/Seed) ---
     const bajramEmail = 'bajramg@amplyfyconsulting.com';
-    if (db.users && !db.users.some(u => u.email.toLowerCase() === bajramEmail)) {
-        const newBajram: User = {
+    const existingBajram = await User.findOne({ email: { $regex: new RegExp(`^${bajramEmail}$`, 'i') } });
+    if (!existingBajram) {
+        await User.create({
             id: crypto.randomUUID(),
             name: 'Bajram G',
             email: bajramEmail,
             password: 'Bajramg12!',
             role: 'Admin',
-            createdAt: new Date().toISOString(),
-        };
-        db.users.push(newBajram);
-        await writeDB(db);
+        });
     }
 
     // --- Normal Login ---
-    const user = db.users?.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+    // Note: In a real app, verify password hash. Here we use plaintext as per existing code.
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') }, password: password });
 
     if (user) {
         await setSession(user.id);
@@ -81,14 +79,14 @@ export async function logout() {
     redirect('/login');
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser() {
     const cookieStore = await cookies();
     const userId = cookieStore.get('session_user_id')?.value;
 
     if (!userId) return null;
 
-    const db = await readDB();
-    const user = db.users?.find(u => u.id === userId);
+    await dbConnect();
+    const user = await User.findOne({ id: userId }).lean();
     return user || null;
 }
 
@@ -96,8 +94,6 @@ export async function checkAuth() {
     const user = await getCurrentUser();
     return !!user;
 }
-
-// --- Employees ---
 
 // --- Employees ---
 
@@ -110,61 +106,48 @@ export async function addEmployee(formData: FormData) {
     const password = formData.get('password') as string;
     const role = formData.get('role') as UserRole;
 
-    try {
-        const db = await readDB();
-        if (!db.users) db.users = [];
+    await dbConnect();
 
-        if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-            throw new Error('User already exists');
-        }
-
-        const newUser: User = {
-            id: crypto.randomUUID(),
-            name,
-            email: email.toLowerCase(),
-            password,
-            role,
-            createdAt: new Date().toISOString(),
-        };
-
-        db.users.push(newUser);
-        await writeDB(db);
-        revalidatePath('/admin/employees');
-    } catch (error) {
-        throw error;
+    const existingUser = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
+    if (existingUser) {
+        throw new Error('User already exists');
     }
+
+    await User.create({
+        id: crypto.randomUUID(),
+        name,
+        email: email.toLowerCase(),
+        password,
+        role,
+    });
+
+    revalidatePath('/admin/employees');
 }
 
 export async function deleteEmployee(id: string) {
     const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'Admin') throw new Error('Unauthorized');
 
-    const db = await readDB();
     // Prevent deleting yourself
     if (currentUser.id === id) throw new Error('Cannot delete yourself');
 
-    if (db.users) {
-        db.users = db.users.filter(u => u.id !== id);
-        await writeDB(db);
-        revalidatePath('/admin/employees');
-    }
+    await dbConnect();
+    await User.deleteOne({ id });
+    revalidatePath('/admin/employees');
 }
 
 // --- Leads ---
 
-export async function addLead(data: Omit<Lead, 'id' | 'createdAt' | 'called'>) {
+export async function addLead(data: any) {
     const isAuth = await checkAuth();
     if (!isAuth) throw new Error('Unauthorized');
 
-    const db = await readDB();
-    const newLead: Lead = {
+    await dbConnect();
+    await Lead.create({
         ...data,
         id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        called: false,
-    };
-    db.leads.push(newLead);
-    await writeDB(db);
+    });
+
     revalidatePath('/admin');
     revalidatePath('/admin/leads');
 }
@@ -173,25 +156,22 @@ export async function updateLeadStatus(id: string, status: LeadStatus) {
     const isAuth = await checkAuth();
     if (!isAuth) throw new Error('Unauthorized');
 
-    const db = await readDB();
-    const lead = db.leads.find((l) => l.id === id);
-    if (lead) {
-        lead.status = status;
-        await writeDB(db);
-        revalidatePath('/admin');
-        revalidatePath('/admin/leads');
-    }
+    await dbConnect();
+    await Lead.updateOne({ id }, { status });
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/leads');
 }
 
 export async function toggleLeadCalled(id: string) {
     const isAuth = await checkAuth();
     if (!isAuth) throw new Error('Unauthorized');
 
-    const db = await readDB();
-    const lead = db.leads.find((l) => l.id === id);
+    await dbConnect();
+    const lead = await Lead.findOne({ id });
     if (lead) {
         lead.called = !lead.called;
-        await writeDB(db);
+        await lead.save();
         revalidatePath('/admin/leads');
     }
 }
@@ -200,9 +180,9 @@ export async function deleteLead(id: string) {
     const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'Admin') throw new Error('Unauthorized');
 
-    const db = await readDB();
-    db.leads = db.leads.filter((l) => l.id !== id);
-    await writeDB(db);
+    await dbConnect();
+    await Lead.deleteOne({ id });
+
     revalidatePath('/admin');
     revalidatePath('/admin/leads');
 }
@@ -239,20 +219,16 @@ export async function addExpense(formData: FormData) {
         receiptPath = `/uploads/receipts/${fileName}`;
     }
 
-    const db = await readDB();
-    if (!db.expenses) db.expenses = []; // Handle migration for existing DB
-
-    const newExpense: Expense = {
+    await dbConnect();
+    await Expense.create({
         id: crypto.randomUUID(),
         description,
         category,
         amount,
         frequency,
         receiptPath,
-        createdAt: new Date().toISOString(),
-    };
-    db.expenses.push(newExpense);
-    await writeDB(db);
+    });
+
     revalidatePath('/admin');
     revalidatePath('/admin/expenses');
 }
@@ -261,11 +237,9 @@ export async function deleteExpense(id: string) {
     const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'Admin') throw new Error('Unauthorized');
 
-    const db = await readDB();
-    if (db.expenses) {
-        db.expenses = db.expenses.filter((e) => e.id !== id);
-        await writeDB(db);
-        revalidatePath('/admin');
-        revalidatePath('/admin/expenses');
-    }
+    await dbConnect();
+    await Expense.deleteOne({ id });
+
+    revalidatePath('/admin');
+    revalidatePath('/admin/expenses');
 }

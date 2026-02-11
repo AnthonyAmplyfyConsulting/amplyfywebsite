@@ -1,4 +1,5 @@
-import { readDB } from '@/lib/db';
+import dbConnect from '@/lib/mongodb';
+import { Expense } from '@/lib/models';
 import ExpensesTable from './expenses-table';
 import { checkAuth, getCurrentUser } from '@/lib/actions';
 import { redirect } from 'next/navigation';
@@ -12,12 +13,10 @@ export default async function ExpensesPage() {
         redirect('/admin');
     }
 
-    const db = await readDB();
+    await dbConnect();
 
     // Sort by createdAt desc
-    const sortedExpenses = [...(db.expenses || [])].sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const sortedExpenses = await Expense.find({}, '-_id -__v').sort({ createdAt: -1 }).lean();
 
-    return <ExpensesTable expenses={sortedExpenses} />;
+    return <ExpensesTable expenses={JSON.parse(JSON.stringify(sortedExpenses))} />;
 }

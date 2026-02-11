@@ -1,12 +1,14 @@
-import { readDB } from '@/lib/db';
+import dbConnect from '@/lib/mongodb';
+import { Lead } from '@/lib/models';
 import { DollarSign, Users, Briefcase, Flame, Thermometer, Snowflake } from 'lucide-react';
 
 async function getStats() {
-    const db = await readDB();
-    const totalLeads = db.leads.length;
-    const hotLeads = db.leads.filter(l => l.status === 'Hot').length;
-    const warmLeads = db.leads.filter(l => l.status === 'Warm').length;
-    const coldLeads = db.leads.filter(l => l.status === 'Cold').length;
+    await dbConnect();
+    const totalLeads = await Lead.countDocuments({});
+    const hotLeads = await Lead.countDocuments({ status: 'Hot' });
+    const warmLeads = await Lead.countDocuments({ status: 'Warm' });
+    const coldLeads = await Lead.countDocuments({ status: 'Cold' });
+
     // Assuming 'Revenue' and 'Clients' are manually tracked or derived for now. 
     // Using dummy derivation or just 0 for MVP.
     const revenue = 0;

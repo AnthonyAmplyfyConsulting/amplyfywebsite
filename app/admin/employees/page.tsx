@@ -1,5 +1,6 @@
 import { checkAuth, getCurrentUser } from '@/lib/actions';
-import { readDB } from '@/lib/db';
+import dbConnect from '@/lib/mongodb';
+import { User } from '@/lib/models';
 import { redirect } from 'next/navigation';
 import EmployeesTable from './employees-table';
 
@@ -12,13 +13,17 @@ export default async function EmployeesPage() {
         redirect('/admin');
     }
 
-    const db = await readDB();
+    await dbConnect();
+
     // Sort users: Admin first, then alphabetical
-    const sortedUsers = [...(db.users || [])].sort((a, b) => {
+    // Mongoose sort might be simpler: .sort({ role: 1, name: 1 }) but 'Admin' < 'Cold Caller', so Ascending works for role.
+    const users = await User.find({}, '-_id -__v').lean();
+
+    const sortedUsers = users.sort((a: any, b: any) => {
         if (a.role === 'Admin' && b.role !== 'Admin') return -1;
         if (a.role !== 'Admin' && b.role === 'Admin') return 1;
         return a.name.localeCompare(b.name);
     });
 
-    return <EmployeesTable users={sortedUsers} currentUserId={currentUser.id} />;
+    return <EmployeesTable users={JSON.parse(JSON.stringify(sortedUsers))} currentUserId={currentUser!.id} />;
 }
