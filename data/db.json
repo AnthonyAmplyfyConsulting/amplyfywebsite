@@ -247,12 +247,28 @@
       "createdAt": "2026-02-10T20:39:42.519Z"
     },
     {
-      "id": "a726cb70-8cb8-4c86-8ab0-6c24d6426295",
+      "id": "ba430f3e-04dc-4fbe-83c8-a3bf9cbfdb63",
       "name": "Bajram G",
-      "email": "Bajramg@amplyfyconsulting.com",
+      "email": "bajramg@amplyfyconsulting.com",
       "password": "Bajramg12!",
       "role": "Admin",
-      "createdAt": "2026-02-11T13:05:00.000Z"
+      "createdAt": "2026-02-11T18:16:25.517Z"
+    },
+    {
+      "id": "223ec737-14b7-4710-a5b3-20ac6e7d9df7",
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "password123",
+      "role": "Cold Caller",
+      "createdAt": "2026-02-11T18:17:31.912Z"
+    },
+    {
+      "id": "d566feb5-0fe9-4630-8e44-d59c5adb2610",
+      "name": "Test",
+      "email": "test@gmail.com",
+      "password": "1234",
+      "role": "Cold Caller",
+      "createdAt": "2026-02-11T18:22:04.727Z"
     }
   ]
 }

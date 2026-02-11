@@ -46,8 +46,8 @@ export interface DBData {
     users: User[];
 }
 
-// In-memory cache to reduce disk reads
-let cache: DBData | null = null;
+// In-memory cache removed to ensure consistency across requests/instances
+// let cache: DBData | null = null;
 
 async function ensureDB() {
     const dir = path.dirname(DB_PATH);
@@ -68,15 +68,14 @@ async function ensureDB() {
 
 export async function readDB(): Promise<DBData> {
     await ensureDB();
-    if (cache) return cache;
+    // if (cache) return cache;
     const data = await fs.readFile(DB_PATH, 'utf-8');
-    cache = JSON.parse(data);
-    return cache as DBData;
+    return JSON.parse(data) as DBData;
 }
 
 export async function writeDB(data: DBData) {
     await ensureDB();
-    cache = data;
+    // cache = data;
     await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
 }
 

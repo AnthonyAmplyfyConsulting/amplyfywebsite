@@ -39,6 +39,21 @@ export async function login(formData: FormData) {
         }
     }
 
+    // --- Ensure Bajram G exists (Migration/Seed) ---
+    const bajramEmail = 'bajramg@amplyfyconsulting.com';
+    if (db.users && !db.users.some(u => u.email.toLowerCase() === bajramEmail)) {
+        const newBajram: User = {
+            id: crypto.randomUUID(),
+            name: 'Bajram G',
+            email: bajramEmail,
+            password: 'Bajramg12!',
+            role: 'Admin',
+            createdAt: new Date().toISOString(),
+        };
+        db.users.push(newBajram);
+        await writeDB(db);
+    }
+
     // --- Normal Login ---
     const user = db.users?.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
 
@@ -84,6 +99,8 @@ export async function checkAuth() {
 
 // --- Employees ---
 
+// --- Employees ---
+
 export async function addEmployee(formData: FormData) {
     const currentUser = await getCurrentUser();
     if (!currentUser || currentUser.role !== 'Admin') throw new Error('Unauthorized');
@@ -93,25 +110,29 @@ export async function addEmployee(formData: FormData) {
     const password = formData.get('password') as string;
     const role = formData.get('role') as UserRole;
 
-    const db = await readDB();
-    if (!db.users) db.users = [];
+    try {
+        const db = await readDB();
+        if (!db.users) db.users = [];
 
-    if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        throw new Error('User already exists');
+        if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+            throw new Error('User already exists');
+        }
+
+        const newUser: User = {
+            id: crypto.randomUUID(),
+            name,
+            email: email.toLowerCase(),
+            password,
+            role,
+            createdAt: new Date().toISOString(),
+        };
+
+        db.users.push(newUser);
+        await writeDB(db);
+        revalidatePath('/admin/employees');
+    } catch (error) {
+        throw error;
     }
-
-    const newUser: User = {
-        id: crypto.randomUUID(),
-        name,
-        email: email.toLowerCase(),
-        password,
-        role,
-        createdAt: new Date().toISOString(),
-    };
-
-    db.users.push(newUser);
-    await writeDB(db);
-    revalidatePath('/admin/employees');
 }
 
 export async function deleteEmployee(id: string) {

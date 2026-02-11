@@ -46,8 +46,8 @@ export default function EmployeesTable({ users, currentUserId }: { users: DBUser
                                     <td className="px-6 py-4 text-zinc-600">{user.email}</td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'Admin'
-                                                ? 'bg-purple-50 text-purple-700'
-                                                : 'bg-blue-50 text-blue-700'
+                                            ? 'bg-purple-50 text-purple-700'
+                                            : 'bg-blue-50 text-blue-700'
                                             }`}>
                                             {user.role}
                                         </span>
