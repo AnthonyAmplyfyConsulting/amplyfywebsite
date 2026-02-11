@@ -185,6 +185,38 @@ export async function deleteLead(id: string) {
     revalidatePath('/admin');
     revalidatePath('/admin/leads');
 }
+
+export async function bulkApproveLeads(leads: Omit<Lead, 'id' | 'createdAt' | 'called'>[]) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || currentUser.role !== 'Admin') throw new Error('Unauthorized');
+
+    const db = await readDB();
+
+    // Check for duplicates by placeId
+    const newLeads: Lead[] = [];
+    for (const leadData of leads) {
+        // Skip if placeId already exists
+        if (leadData.placeId && db.leads.some(l => l.placeId === leadData.placeId)) {
+            continue;
+        }
+
+        const newLead: Lead = {
+            ...leadData,
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            called: false,
+        };
+        newLeads.push(newLead);
+    }
+
+    db.leads.push(...newLeads);
+    await writeDB(db);
+    revalidatePath('/admin');
+    revalidatePath('/admin/leads');
+
+    return { added: newLeads.length, skipped: leads.length - newLeads.length };
+}
+
 // --- Expenses ---
 
 export async function addExpense(formData: FormData) {

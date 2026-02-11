@@ -26,6 +26,14 @@ export interface Lead {
     status: LeadStatus;
     called: boolean;
     createdAt: string;
+    // Lead finder fields
+    source?: 'manual' | 'lead_finder';
+    placeId?: string; // Google Place ID for deduplication
+    website?: string;
+    address?: string;
+    rating?: number;
+    reviewCount?: number;
+    priceLevel?: string; // "$", "$$", "$$$", "$$$$"
 }
 
 export type ExpenseFrequency = 'Monthly' | 'One-time' | 'Yearly';

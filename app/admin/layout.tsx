@@ -1,7 +1,7 @@
 import { checkAuth, getCurrentUser, logout } from '@/lib/actions';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, LogOut, FileText, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, FileText, Briefcase, Search } from 'lucide-react';
 
 export default async function AdminLayout({
     children,
@@ -48,6 +48,10 @@ export default async function AdminLayout({
 
                     {isAdmin && (
                         <>
+                            <Link href="/admin/leads/finder" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl transition-colors font-medium">
+                                <Search className="w-5 h-5" />
+                                Lead Finder
+                            </Link>
                             <Link href="/admin/expenses" className="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl transition-colors font-medium">
                                 <FileText className="w-5 h-5" />
                                 Expenses
