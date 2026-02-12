@@ -72,12 +72,12 @@ export function Navbar() {
                     </div>
 
                     <div className="hidden md:block">
-                        <a
-                            href="/login"
+                        <button
+                            onClick={() => scrollToSection("contact")}
                             className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-bold rounded-full hover:bg-[#ff5500] transition-colors"
                         >
-                            Log In
-                        </a>
+                            Book a Call
+                        </button>
                     </div>
 
                     {/* Mobile Menu Toggle */}
